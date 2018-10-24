@@ -1,5 +1,5 @@
 # babel-changed
-A command line tool that only compile changed files with babel.
+A command line tool that only compiles changed files with babel.
 
 ### Install
 
