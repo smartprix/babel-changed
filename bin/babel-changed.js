@@ -5,19 +5,21 @@ const {transform} = require('../index');
 
 program
 	.version(version)
-	.option('-d, --dest [dir]', 'Specify Destination Directory', 'dist')
 	.option('-s, --src [dir]', 'Specify Source Directory', 'src')
+	.option('-d, --dest [dir]', 'Specify Destination Directory', 'dist')
 	.option('-f, --file-glob [pattern]', 'Glob pattern to match files in source directory', '**/*.*')
+	.option('-i, --ignore-glob [pattern]', 'Glob pattern to match files to ignore', '')
 	.option('-m, --source-maps [boolean]', 'Enable source maps', true)
 	.option('-c, --copy [boolean]', 'Copy files other than .js files', true)
 	.parse(process.argv);
 
 const options = {
 	srcDir: program.src,
-	filesGlobPattern: program.fileGlob,
 	destDir: program.dest,
-	copyOthers: program.copy !== 'false',
+	filesGlobPattern: program.fileGlob,
+	ignoredGlobPattern: program.ignoreGlob,
 	sourceMaps: program.sourceMaps !== 'false',
+	copyOthers: program.copy !== 'false',
 };
 
 async function runAndExit() {
