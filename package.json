@@ -1,0 +1,34 @@
+{
+  "name": "@smpx/babel-changed",
+  "version": "0.1.0",
+  "description": "Only compile changed files with babel",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smartprix/babel-changed.git"
+  },
+  "keywords": [
+    "babel",
+    "es6",
+    "es5",
+    "transpile",
+    "development",
+    "node",
+    "js",
+    "compile"
+  ],
+  "author": "Rohit Gohri",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smartprix/babel-changed/issues"
+  },
+  "homepage": "https://github.com/smartprix/babel-changed#readme",
+  "dependencies": {
+    "@babel/core": "^7.1.2",
+    "commander": "^2.19.0",
+    "sm-utils": "^2.15.3"
+  }
+}
