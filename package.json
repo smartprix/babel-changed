@@ -30,8 +30,10 @@
   },
   "homepage": "https://github.com/smartprix/babel-changed#readme",
   "dependencies": {
-    "@babel/core": "^7.1.2",
     "commander": "^2.19.0",
     "sm-utils": "^2.15.3"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.1.2"
   }
 }
