@@ -3,7 +3,10 @@ A command line tool that only compiles changed files with babel.
 
 ### Install
 
+Globally:
 	npm install -g @smpx/babel-changed
+Or locally:
+	npm install @smpx/babel-changed --only=dev
 
 ### Use
 Default source directory is `src` and default out directory is `dist`
