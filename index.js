@@ -2,7 +2,19 @@ const util = require('util');
 const babel = require('@babel/core');
 const {file, Vachan} = require('sm-utils');
 
-let logger = console;
+let logger;
+function getLogger() {
+	if (logger) return logger;
+	try {
+		// eslint-disable-next-line global-require
+		const {Oak} = require('@smpx/oak');
+		logger = new Oak('babel-changed');
+	}
+	catch (err) {
+		logger = console;
+	}
+	return logger;
+}
 
 async function transform({
 	srcDir = 'src',
@@ -12,7 +24,7 @@ async function transform({
 	sourceMaps = true,
 	ignoredGlobPattern = '',
 } = {}) {
-	logger.time('babel-changed');
+	getLogger().time('babel-changed');
 	const srcFiles = await file(`${srcDir}/${filesGlobPattern}`).glob();
 	const destFiles = await file(`${destDir}/${filesGlobPattern}`).glob();
 	const ignoredFiles = ignoredGlobPattern !== '' ? await file(`${srcDir}/${ignoredGlobPattern}`).glob() : [];
@@ -52,7 +64,7 @@ async function transform({
 	});
 
 	if (filesToCopy.length) {
-		logger.log(`[babel] copying ${filesToCopy.length} files`);
+		getLogger().log(`[babel] copying ${filesToCopy.length} files`);
 		await Vachan.map(filesToCopy, async ([src, dest]) => {
 			await file(dest).mkdirpPath();
 			await file(src).copy(dest);
@@ -60,20 +72,20 @@ async function transform({
 	}
 
 	if (filesToRemove.length) {
-		logger.log(`[babel] removing ${filesToRemove.length} files`);
+		getLogger().log(`[babel] removing ${filesToRemove.length} files`);
 		await Vachan.map(filesToRemove, async (destFile) => {
 			await file(destFile).rm();
 		});
 	}
 
 	if (!filesToCompile.length) {
-		logger.log('[babel] nothing to compile');
-		logger.timeEnd('babel-changed');
+		getLogger().log('[babel] nothing to compile');
+		getLogger().timeEnd('babel-changed');
 		return;
 	}
 
 	const transformFile = util.promisify(babel.transformFile);
-	logger.log(`[babel] compiling ${filesToCompile.length} files`);
+	getLogger().log(`[babel] compiling ${filesToCompile.length} files`);
 
 
 	const options = {
@@ -95,9 +107,10 @@ async function transform({
 		}
 	}, {concurrency: 5});
 
-	logger.timeEnd('babel-changed');
+	getLogger().timeEnd('babel-changed');
 }
 
 module.exports = {
 	transform,
+	getLogger,
 }

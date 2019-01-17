@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 const program = require('commander');
 const {version} = require('../package.json');
-const {transform} = require('../index');
+const {transform, getLogger} = require('../index');
 
 program
 	.version(version)
@@ -28,7 +28,7 @@ async function runAndExit() {
 		process.exit(0);
 	}
 	catch(err) {
-		console.error(err);
+		getLogger().error('Error while transpiling files', err);
 		process.exit(1);
 	}
 }
