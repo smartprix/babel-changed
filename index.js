@@ -28,7 +28,7 @@ async function transform({
 	const srcFiles = await file(`${srcDir}/${filesGlobPattern}`).glob();
 	const destFiles = await file(`${destDir}/${filesGlobPattern}`).glob();
 	const ignoredFiles = ignoredGlobPattern !== '' ? await file(`${srcDir}/${ignoredGlobPattern}`).glob() : [];
-	
+
 	const filesToCompile = [];
 	const filesToCopy = [];
 	const filesToRemove = [];
@@ -74,7 +74,9 @@ async function transform({
 	if (filesToRemove.length) {
 		getLogger().log(`[babel] removing ${filesToRemove.length} files`);
 		await Vachan.map(filesToRemove, async (destFile) => {
-			await file(destFile).rm();
+			await file(destFile).rm().catch((err) => {
+				getLogger().warn('A file could not be removed,', destFile, err.message)
+			});
 		});
 	}
 
@@ -100,7 +102,7 @@ async function transform({
 			result.code += `\n//# sourceMappingURL=${process.cwd()}/${destFile}.map`
 		}
 		await file(destFile).write(result.code);
-		
+
 		if (result.map && sourceMaps) {
 			result.map.sources = [`${process.cwd()}/${srcFile}`]
 			await file(`${destFile}.map`).write(JSON.stringify(result.map));
