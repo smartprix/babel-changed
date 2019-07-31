@@ -14,12 +14,16 @@ Globally:
 
 ```sh
 npm install -g @smpx/babel-changed
+# OR
+yarn global add @smpx/babel-changed
 ```
 
 Or locally:
 
 ```sh
 npm install @smpx/babel-changed --only=dev
+# OR
+yarn add @smpx/babel-changed --dev
 ```
 
 ## Use
