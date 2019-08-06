@@ -1,0 +1,13 @@
+kind: pipeline
+name: default
+
+steps:
+- name: npm
+  image: plugins/npm
+  settings:
+    token:
+      from_secret: npm_token
+
+trigger:
+  event:
+    tag
