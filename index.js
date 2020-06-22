@@ -20,6 +20,7 @@ async function transform({
 	srcDir = 'src',
 	filesGlobPattern = '**/*.*',
 	destDir = 'dist',
+	extensions = ['.js'],
 	copyOthers = true,
 	sourceMaps = true,
 	ignoredGlobPattern = '',
@@ -41,7 +42,7 @@ async function transform({
 		const destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
 		const mtimeDest = await file(destFile).mtime();
 		if (mtimeDest < mtimeSrc) {
-			if (srcFile.endsWith('.js')) {
+			if (extensions.reduce((result, extension) => result ||srcFile.endsWith(extension), false)) {
 				filesToCompile.push(srcFile);
 			}
 			else if (copyOthers) {

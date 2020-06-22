@@ -9,6 +9,7 @@ program
 	.option('-d, --dest [dir]', 'Specify Destination Directory', 'dist')
 	.option('-f, --file-glob [pattern]', 'Glob pattern to match files in source directory', '**/*.*')
 	.option('-i, --ignore-glob [pattern]', 'Glob pattern to match files to ignore', '')
+	.option('-e, --extensions <exts>', 'Extensions to compile (comma separated)', '.js')
 	.option('-m, --source-maps [boolean]', 'Enable source maps', true)
 	.option('-c, --copy [boolean]', 'Copy files other than .js files', true)
 	.parse(process.argv);
@@ -18,6 +19,7 @@ const options = {
 	destDir: program.dest,
 	filesGlobPattern: program.fileGlob,
 	ignoredGlobPattern: program.ignoreGlob,
+	extensions: program.extensions.split(',').filter(Boolean),
 	sourceMaps: program.sourceMaps !== 'false',
 	copyOthers: program.copy !== 'false',
 };

@@ -50,6 +50,7 @@ Options:
   -d, --dest [dir]             Specify Destination Directory (default: "dist")
   -f, --file-glob [pattern]    Glob pattern to match files in source directory (default: "**/*.*")
   -i, --ignore-glob [pattern]  Glob pattern to match files to ignore (default: "")
+  -e, --extensions <exts>      Extensions to compile (comma separated) (default: ".js")
   -m, --source-maps [boolean]  Enable source maps (default: true)
   -c, --copy [boolean]         Copy files other than .js files (default: true)
   -h, --help                   output usage information
