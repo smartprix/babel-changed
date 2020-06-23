@@ -43,7 +43,7 @@ async function transform({
 		const destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
 		const mtimeDest = await file(destFile).mtime();
 		if (mtimeDest < mtimeSrc) {
-			if (extensions.reduce((result, extension) => result ||srcFile.endsWith(extension), false)) {
+			if (extensions.some((extension) => srcFile.endsWith(extension))) {
 				filesToCompile.push(srcFile);
 			}
 			else if (copyOthers) {
