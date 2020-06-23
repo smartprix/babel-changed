@@ -19,7 +19,7 @@ const options = {
 	destDir: program.dest,
 	filesGlobPattern: program.fileGlob,
 	ignoredGlobPattern: program.ignoreGlob,
-	extensions: program.extensions.split(',').filter(Boolean),
+	extensions: program.extensions.split(',').map(s => s.trim()).filter(Boolean),
 	sourceMaps: program.sourceMaps !== 'false',
 	copyOthers: program.copy !== 'false',
 };
