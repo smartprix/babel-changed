@@ -1,6 +1,8 @@
-const util = require('util');
 const babel = require('@babel/core');
-const {file, Vachan} = require('sm-utils');
+const path = require('path');
+const fs = require('fs').promises;
+const nodeGlob = require('glob');
+const pMap = require('p-map');
 
 function getLogger() {
 	let logger = console;
@@ -15,6 +17,36 @@ function getLogger() {
 	return logger;
 }
 
+async function mtime(file) {
+	try {
+		return (await fs.lstat(file)).mtime;
+	}
+	catch (e) {
+		return 0;
+	}
+}
+
+async function mkdirp(file) {
+	return fs.mkdir(path.dirname(file), {recursive: true, mode: 0o755});
+}
+
+async function write(file, contents) {
+	return fs.writeFile(file, contents, {encoding: 'utf8', mode: 0o644});
+}
+
+async function glob(pattern) {
+	return new Promise((resolve, reject) => {
+		nodeGlob(pattern, (err, files) => {
+			if (err) {
+				reject(err);
+			}
+			else {
+				resolve(files);
+			}
+		});
+	});
+}
+
 const logger = getLogger();
 
 async function transform({
@@ -27,21 +59,21 @@ async function transform({
 	ignoredGlobPattern = '',
 } = {}) {
 	logger.time('babel-changed');
-	const srcFiles = await file(`${srcDir}/${filesGlobPattern}`).glob();
-	const destFiles = await file(`${destDir}/${filesGlobPattern}`).glob();
-	const ignoredFiles = ignoredGlobPattern !== '' ? await file(`${srcDir}/${ignoredGlobPattern}`).glob() : [];
+	const srcFiles = await glob(`${srcDir}/${filesGlobPattern}`);
+	const destFiles = await glob(`${destDir}/${filesGlobPattern}`);
+	const ignoredFiles = ignoredGlobPattern !== '' ? await glob(`${srcDir}/${ignoredGlobPattern}`) : [];
 
 	const filesToCompile = [];
 	const filesToCopy = [];
 	const filesToRemove = [];
 
 	// Filter source files between files to copy or compile
-	await Vachan.map(srcFiles, async (srcFile) => {
+	await pMap(srcFiles, async (srcFile) => {
 		if (ignoredFiles.includes(srcFile)) return;
 
-		const mtimeSrc = await file(srcFile).mtime();
+		const mtimeSrc = await mtime(srcFile);
 		const destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
-		const mtimeDest = await file(destFile).mtime();
+		const mtimeDest = await mtime(destFile);
 		if (mtimeDest < mtimeSrc) {
 			if (extensions.some((extension) => srcFile.endsWith(extension))) {
 				filesToCompile.push(srcFile);
@@ -67,16 +99,16 @@ async function transform({
 
 	if (filesToCopy.length) {
 		logger.log(`[babel] copying ${filesToCopy.length} files`);
-		await Vachan.map(filesToCopy, async ([src, dest]) => {
-			await file(dest).mkdirpPath();
-			await file(src).copy(dest);
+		await pMap(filesToCopy, async ([src, dest]) => {
+			await mkdirp(dest);
+			await fs.copyFile(src, dest);
 		});
 	}
 
 	if (filesToRemove.length) {
 		logger.log(`[babel] removing ${filesToRemove.length} files`);
-		await Vachan.map(filesToRemove, async (destFile) => {
-			await file(destFile).rm().catch((err) => {
+		await pMap(filesToRemove, async (destFile) => {
+			await fs.unlink(destFile).catch((err) => {
 				logger.warn('A file could not be removed,', destFile, err.message)
 			});
 		});
@@ -88,26 +120,26 @@ async function transform({
 		return;
 	}
 
-	const transformFile = util.promisify(babel.transformFile);
 	logger.log(`[babel] compiling ${filesToCompile.length} files`);
-
 
 	const options = {
 		sourceMaps,
 	};
 
-	await Vachan.map(filesToCompile, async (srcFile) => {
+	await pMap(filesToCompile, async (srcFile) => {
 		const destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
-		const result = await transformFile(srcFile, options);
+		const result = await babel.transformFileAsync(srcFile, options);
 
 		if (sourceMaps) {
 			result.code += `\n//# sourceMappingURL=${process.cwd()}/${destFile}.map`
 		}
-		await file(destFile).write(result.code);
+
+		await mkdirp(destFile);
+		await write(destFile, result.code);
 
 		if (result.map && sourceMaps) {
 			result.map.sources = [`${process.cwd()}/${srcFile}`]
-			await file(`${destFile}.map`).write(JSON.stringify(result.map));
+			await write(`${destFile}.map`, JSON.stringify(result.map));
 		}
 	}, {concurrency: 5});
 
