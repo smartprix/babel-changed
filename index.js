@@ -2,9 +2,8 @@ const util = require('util');
 const babel = require('@babel/core');
 const {file, Vachan} = require('sm-utils');
 
-let logger;
 function getLogger() {
-	if (logger) return logger;
+	let logger = console;
 	try {
 		// eslint-disable-next-line global-require
 		const {Oak} = require('@smpx/oak');
@@ -16,15 +15,18 @@ function getLogger() {
 	return logger;
 }
 
+const logger = getLogger();
+
 async function transform({
 	srcDir = 'src',
 	filesGlobPattern = '**/*.*',
 	destDir = 'dist',
+	extensions = ['.js'],
 	copyOthers = true,
 	sourceMaps = true,
 	ignoredGlobPattern = '',
 } = {}) {
-	getLogger().time('babel-changed');
+	logger.time('babel-changed');
 	const srcFiles = await file(`${srcDir}/${filesGlobPattern}`).glob();
 	const destFiles = await file(`${destDir}/${filesGlobPattern}`).glob();
 	const ignoredFiles = ignoredGlobPattern !== '' ? await file(`${srcDir}/${ignoredGlobPattern}`).glob() : [];
@@ -41,7 +43,7 @@ async function transform({
 		const destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
 		const mtimeDest = await file(destFile).mtime();
 		if (mtimeDest < mtimeSrc) {
-			if (srcFile.endsWith('.js')) {
+			if (extensions.some((extension) => srcFile.endsWith(extension))) {
 				filesToCompile.push(srcFile);
 			}
 			else if (copyOthers) {
@@ -64,7 +66,7 @@ async function transform({
 	});
 
 	if (filesToCopy.length) {
-		getLogger().log(`[babel] copying ${filesToCopy.length} files`);
+		logger.log(`[babel] copying ${filesToCopy.length} files`);
 		await Vachan.map(filesToCopy, async ([src, dest]) => {
 			await file(dest).mkdirpPath();
 			await file(src).copy(dest);
@@ -72,22 +74,22 @@ async function transform({
 	}
 
 	if (filesToRemove.length) {
-		getLogger().log(`[babel] removing ${filesToRemove.length} files`);
+		logger.log(`[babel] removing ${filesToRemove.length} files`);
 		await Vachan.map(filesToRemove, async (destFile) => {
 			await file(destFile).rm().catch((err) => {
-				getLogger().warn('A file could not be removed,', destFile, err.message)
+				logger.warn('A file could not be removed,', destFile, err.message)
 			});
 		});
 	}
 
 	if (!filesToCompile.length) {
-		getLogger().log('[babel] nothing to compile');
-		getLogger().timeEnd('babel-changed');
+		logger.log('[babel] nothing to compile');
+		logger.timeEnd('babel-changed');
 		return;
 	}
 
 	const transformFile = util.promisify(babel.transformFile);
-	getLogger().log(`[babel] compiling ${filesToCompile.length} files`);
+	logger.log(`[babel] compiling ${filesToCompile.length} files`);
 
 
 	const options = {
@@ -109,10 +111,10 @@ async function transform({
 		}
 	}, {concurrency: 5});
 
-	getLogger().timeEnd('babel-changed');
+	logger.timeEnd('babel-changed');
 }
 
 module.exports = {
 	transform,
-	getLogger,
+	logger,
 }

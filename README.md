@@ -1,10 +1,10 @@
 # babel-changed
 
-<a href="https://www.npmjs.com/package/@smpx/babel-changed"><img src="https://img.shields.io/npm/v/@smpx/babel-changed.svg" alt="Version"></a>
-<a href="https://www.npmjs.com/package/@smpx/babel-changed"><img src="https://img.shields.io/npm/dm/@smpx/babel-changed.svg" alt="Downloads"></a>
-<a href="https://www.npmjs.com/package/@smpx/babel-changed"><img src="https://img.shields.io/npm/l/@smpx/babel-changed.svg" alt="License"></a>
-<a href="https://david-dm.org/smartprix/babel-changed"><img src="https://david-dm.org/smartprix/babel-changed/status.svg" alt="Dependencies"></a>
-<a href="https://david-dm.org/smartprix/babel-changed?type=dev"><img src="https://david-dm.org/smartprix/babel-changed/dev-status.svg" alt="Dev Dependencies"></a>
+[![Version](https://img.shields.io/npm/v/@smpx/babel-changed.svg)](https://www.npmjs.com/package/@smpx/babel-changed)
+[![Downloads](https://img.shields.io/npm/dm/@smpx/babel-changed.svg)](https://www.npmjs.com/package/@smpx/babel-changed)
+[![License](https://img.shields.io/npm/l/@smpx/babel-changed.svg)](https://www.npmjs.com/package/@smpx/babel-changed)
+[![Dependencies](https://david-dm.org/smartprix/babel-changed/status.svg)](https://david-dm.org/smartprix/babel-changed)
+[![Dev Dependencies](https://david-dm.org/smartprix/babel-changed/dev-status.svg)](https://david-dm.org/smartprix/babel-changed?type=dev)
 
 A command line tool that only compiles changed files with babel.
 
@@ -21,7 +21,7 @@ yarn global add @smpx/babel-changed
 Or locally:
 
 ```sh
-npm install @smpx/babel-changed --only=dev
+npm install @smpx/babel-changed --save-dev
 # OR
 yarn add @smpx/babel-changed --dev
 ```
@@ -50,6 +50,7 @@ Options:
   -d, --dest [dir]             Specify Destination Directory (default: "dist")
   -f, --file-glob [pattern]    Glob pattern to match files in source directory (default: "**/*.*")
   -i, --ignore-glob [pattern]  Glob pattern to match files to ignore (default: "")
+  -e, --extensions <exts>      Extensions to compile (comma separated) (default: ".js")
   -m, --source-maps [boolean]  Enable source maps (default: true)
   -c, --copy [boolean]         Copy files other than .js files (default: true)
   -h, --help                   output usage information
