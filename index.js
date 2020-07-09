@@ -109,7 +109,7 @@ async function transform({
 		logger.log(`[babel] removing ${filesToRemove.length} files`);
 		await pMap(filesToRemove, async (destFile) => {
 			await fs.unlink(destFile).catch((err) => {
-				logger.warn('A file could not be removed,', destFile, err.message)
+				logger.warn('[babel] A file could not be removed,', destFile, err.message)
 			});
 		});
 	}
@@ -127,7 +127,8 @@ async function transform({
 	};
 
 	await pMap(filesToCompile, async (srcFile) => {
-		const destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
+		let destFile = `${destDir}${srcFile.substring(srcDir.length)}`;
+		destFile = `${destFile.slice(0, destFile.length - path.extname(destFile).length)}.js`;
 		const result = await babel.transformFileAsync(srcFile, options);
 
 		if (sourceMaps) {

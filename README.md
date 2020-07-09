@@ -63,3 +63,13 @@ If your source directory is `source` destination directory is `out` then use
 ```sh
 babel-changed -s source -d out
 ```
+
+### Extensions/Typescript support
+
+For compiling TS/JSX files with babel, change the extensions to compile like below:
+
+```sh
+babel-changed -e ".js,.ts"
+```
+
+**NOTE**: Extension of compiled file will always be `.js`.
