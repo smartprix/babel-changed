@@ -135,6 +135,11 @@ async function transform({
 		destFile = `${destFile.slice(0, destFile.length - path.extname(destFile).length)}.js`;
 		const result = await babel.transformFileAsync(srcFile, options);
 
+		// files can be ignored from babel config
+		if (!result) {
+			return;
+		}
+
 		if (sourceMaps) {
 			result.code += `\n//# sourceMappingURL=${destFile}.map`;
 		}
