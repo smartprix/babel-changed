@@ -59,8 +59,15 @@ async function transform({
 	}
 
 	logger.time('babel-changed');
-	const srcFiles = await fastGlob(`${srcDir}/${filesGlobPattern}`, {ignore: ignorePattern, absolute: true});
-	const destFiles = await fastGlob(`${destDir}/${filesGlobPattern}`, {absolute: true});
+	const srcFiles = await fastGlob(filesGlobPattern, {
+		cwd: srcDir,
+		ignore: ignorePattern,
+		absolute: true,
+	});
+	const destFiles = await fastGlob(filesGlobPattern, {
+		cwd: destDir,
+		absolute: true,
+	});
 
 	const filesToCompile = [];
 	const filesToCopy = [];
