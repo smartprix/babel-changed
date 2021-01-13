@@ -7,7 +7,7 @@ program
 	.version(version)
 	.option('-s, --src [dir]', 'Specify Source Directory', 'src')
 	.option('-d, --dest [dir]', 'Specify Destination Directory', 'dist')
-	.option('-f, --file-glob [pattern]', 'Glob pattern to match files in source directory', '**/*.*')
+	.option('-f, --file-glob [pattern]', 'Glob pattern to match files in source directory', '{,!(node_modules)/**/}*.*')
 	.option('-i, --ignore-glob [pattern]', 'Glob pattern to match files to ignore', '')
 	.option('-e, --extensions <exts>', 'Extensions to compile (comma separated)', '.js')
 	.option('-m, --source-maps [boolean]', 'Enable source maps', true)

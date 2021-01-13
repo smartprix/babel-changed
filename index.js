@@ -55,7 +55,7 @@ const logger = getLogger();
 
 async function transform({
 	srcDir = 'src',
-	filesGlobPattern = '**/*.*',
+	filesGlobPattern = '{,!(node_modules)/**/}*.*',
 	destDir = 'dist',
 	extensions = ['.js'],
 	copyOthers = true,
