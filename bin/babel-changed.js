@@ -12,6 +12,7 @@ program
 	.option('-e, --extensions <exts>', 'Extensions to compile (comma separated)', '.js')
 	.option('-m, --source-maps [boolean]', 'Enable source maps', true)
 	.option('-c, --copy [boolean]', 'Copy files other than .js files', true)
+	.option('-v, --verbose [boolean]', 'Logs info about executed file operations', true)
 	.parse(process.argv);
 
 const options = {
@@ -22,6 +23,7 @@ const options = {
 	extensions: program.extensions.split(',').map(s => s.trim()).filter(Boolean),
 	sourceMaps: program.sourceMaps !== 'false',
 	copyOthers: program.copy !== 'false',
+	verbose: program.verbose !== 'false',
 };
 
 async function runAndExit() {
