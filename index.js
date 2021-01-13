@@ -47,6 +47,10 @@ async function glob(pattern) {
 	});
 }
 
+function removeSlash(dir) {
+	return dir.endsWith('/') ? dir.substring(0, dir.length - 1) : dir;
+}
+
 const logger = getLogger();
 
 async function transform({
@@ -58,6 +62,10 @@ async function transform({
 	sourceMaps = true,
 	ignoredGlobPattern = '',
 } = {}) {
+	// remove slashes from the end of paths given
+	srcDir = removeSlash(srcDir);
+	destDir = removeSlash(destDir);
+
 	logger.time('babel-changed');
 	const srcFiles = await glob(`${srcDir}/${filesGlobPattern}`);
 	const destFiles = await glob(`${destDir}/${filesGlobPattern}`);
