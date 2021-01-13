@@ -48,7 +48,8 @@ Options:
   -V, --version                output the version number
   -s, --src [dir]              Specify Source Directory (default: "src")
   -d, --dest [dir]             Specify Destination Directory (default: "dist")
-  -f, --file-glob [pattern]    Glob pattern to match files in source directory (default: "**/*.*" (all files))
+  -f, --file-glob [pattern]    Glob pattern to match files in source directory
+                               (default: "**/*.*" (all files))
   -i, --ignore-glob [pattern]  Glob pattern to match files to ignore
                                (default: "**/node_modules/**" (ignore all files inside node_modules))
   -e, --extensions <exts>      Extensions to compile (comma separated) (default: ".js")
