@@ -135,7 +135,9 @@ async function transform({
 		const result = await babel.transformFileAsync(srcFile, options);
 
 		if (!result) {
-			ignoredFilesToCopy.push([srcFile, destFile]);
+			if (copyOthers) {
+				ignoredFilesToCopy.push([srcFile, destFile]);
+			}
 			return;
 		}
 
@@ -155,7 +157,7 @@ async function transform({
 	}, {concurrency: 5});
 
 	if (ignoredFilesToCopy.length) {
-		logger.log(`[babel] copying ${ignoredFilesToCopy.length} ignored files`);
+		logger.log(`[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config. Copying them unmodified.`);
 		await pMap(ignoredFilesToCopy, async ([src, dest]) => {
 			await mkdirp(dest);
 			await fs.copyFile(src, dest);
