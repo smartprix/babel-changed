@@ -34,10 +34,6 @@ async function write(file, contents) {
 	return fs.writeFile(file, contents, {encoding: 'utf8', mode: 0o644});
 }
 
-function removeSlash(dir) {
-	return dir.endsWith('/') ? dir.substring(0, dir.length - 1) : dir;
-}
-
 const logger = getLogger();
 
 async function transform({
@@ -49,25 +45,22 @@ async function transform({
 	sourceMaps = true,
 	ignoredGlobPattern = '**/node_modules/**',
 } = {}) {
-	// remove slashes from the end of paths given
-	srcDir = removeSlash(srcDir);
-	destDir = removeSlash(destDir);
+	// convert srcDir & destDir to absolute path
+	srcDir = path.resolve(srcDir);
+	destDir = path.resolve(destDir);
 
 	const ignorePattern = [];
-	if (srcDir === '.' || srcDir === process.cwd() || destDir.startsWith(`${srcDir}/`)) {
+	if (destDir.startsWith(`${srcDir}/`)) {
 		// destDir is inside srcDir, ignore destDir files
 		ignorePattern.push(`${destDir}/**`);
 	}
 	if (ignoredGlobPattern) {
 		ignorePattern.push(ignoredGlobPattern);
 	}
-	const glob = (pattern) => fastGlob(pattern, {
-		ignore: ignorePattern,
-	});
 
 	logger.time('babel-changed');
-	const srcFiles = await glob(`${srcDir}/${filesGlobPattern}`);
-	const destFiles = await glob(`${destDir}/${filesGlobPattern}`);
+	const srcFiles = await fastGlob(`${srcDir}/${filesGlobPattern}`, {ignore: ignorePattern, absolute: true});
+	const destFiles = await fastGlob(`${destDir}/${filesGlobPattern}`, {absolute: true});
 
 	const filesToCompile = [];
 	const filesToCopy = [];
@@ -76,7 +69,7 @@ async function transform({
 	// Filter source files between files to copy or compile
 	await pMap(srcFiles, async (srcFile) => {
 		const mtimeSrc = await mtime(srcFile);
-		const destFile = `${destDir}/${srcFile}`;
+		const destFile = `${destDir}/${srcFile.substring(srcDir.length + 1)}`;
 		const mtimeDest = await mtime(destFile);
 		if (mtimeDest < mtimeSrc) {
 			if (extensions.some((extension) => srcFile.endsWith(extension))) {
@@ -92,7 +85,7 @@ async function transform({
 		// ignore map files
 		if (destFile.endsWith('.map')) return;
 
-		const srcFile = `${srcDir}/${destFile}`;
+		const srcFile = `${srcDir}/${destFile.substring(destDir.length + 1)}`;
 		if (!srcFiles.includes(srcFile)) {
 			filesToRemove.push(destFile);
 			if (destFile.endsWith('.js')) {
@@ -131,19 +124,19 @@ async function transform({
 	};
 
 	await pMap(filesToCompile, async (srcFile) => {
-		let destFile = `${destDir}/${srcFile}`;
+		let destFile = `${destDir}/${srcFile.substring(srcDir.length + 1)}`;
 		destFile = `${destFile.slice(0, destFile.length - path.extname(destFile).length)}.js`;
 		const result = await babel.transformFileAsync(srcFile, options);
 
 		if (sourceMaps) {
-			result.code += `\n//# sourceMappingURL=${process.cwd()}/${destFile}.map`;
+			result.code += `\n//# sourceMappingURL=${destFile}.map`;
 		}
 
 		await mkdirp(destFile);
 		await write(destFile, result.code);
 
 		if (result.map && sourceMaps) {
-			result.map.sources = [`${process.cwd()}/${srcFile}`];
+			result.map.sources = [srcFile];
 			await write(`${destFile}.map`, JSON.stringify(result.map));
 		}
 	}, {concurrency: 5});
