@@ -44,6 +44,7 @@ async function transform({
 	copyOthers = true,
 	sourceMaps = true,
 	ignoredGlobPattern = '**/node_modules/**',
+	verbose = true,
 } = {}) {
 	// convert srcDir & destDir to absolute path
 	srcDir = path.resolve(srcDir);
@@ -58,7 +59,9 @@ async function transform({
 		ignorePattern.push(ignoredGlobPattern);
 	}
 
-	logger.time('babel-changed');
+	if (verbose) {
+		logger.time('babel-changed');
+	}
 	const srcFiles = await fastGlob(filesGlobPattern, {
 		cwd: srcDir,
 		ignore: ignorePattern,
@@ -103,7 +106,9 @@ async function transform({
 	});
 
 	if (filesToCopy.length) {
-		logger.log(`[babel] copying ${filesToCopy.length} files`);
+		if (verbose) {
+			logger.log(`[babel] copying ${filesToCopy.length} files`);
+		}
 		await pMap(filesToCopy, async ([src, dest]) => {
 			await mkdirp(dest);
 			await fs.copyFile(src, dest);
@@ -111,7 +116,9 @@ async function transform({
 	}
 
 	if (filesToRemove.length) {
-		logger.log(`[babel] removing ${filesToRemove.length} files`);
+		if (verbose) {
+			logger.log(`[babel] removing ${filesToRemove.length} files`);
+		}
 		await pMap(filesToRemove, async (destFile) => {
 			await fs.unlink(destFile).catch((err) => {
 				logger.warn('[babel] A file could not be removed,', destFile, err.message);
@@ -120,12 +127,16 @@ async function transform({
 	}
 
 	if (!filesToCompile.length) {
-		logger.log('[babel] nothing to compile');
-		logger.timeEnd('babel-changed');
+		if (verbose) {
+			logger.log('[babel] nothing to compile');
+			logger.timeEnd('babel-changed');
+		}
 		return;
 	}
 
-	logger.log(`[babel] compiling ${filesToCompile.length} files`);
+	if (verbose) {
+		logger.log(`[babel] compiling ${filesToCompile.length} files`);
+	}
 
 	const options = {
 		sourceMaps,
@@ -167,7 +178,9 @@ async function transform({
 		}
 	}
 
-	logger.timeEnd('babel-changed');
+	if (verbose) {
+		logger.timeEnd('babel-changed');
+	}
 }
 
 module.exports = {
