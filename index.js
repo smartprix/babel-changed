@@ -74,6 +74,7 @@ async function transform({
 
 	const filesToCompile = [];
 	const filesToCopy = [];
+	const ignoredFilesToCopy = [];
 	const filesToRemove = [];
 
 	// Filter source files between files to copy or compile
@@ -83,7 +84,7 @@ async function transform({
 		const mtimeDest = await mtime(destFile);
 		if (mtimeDest < mtimeSrc) {
 			if (extensions.some((extension) => srcFile.endsWith(extension))) {
-				filesToCompile.push(srcFile);
+				filesToCompile.push([srcFile, destFile]);
 			}
 			else if (copyOthers) {
 				filesToCopy.push([srcFile, destFile]);
@@ -141,10 +142,15 @@ async function transform({
 		sourceMaps,
 	};
 
-	await pMap(filesToCompile, async (srcFile) => {
-		let destFile = `${destDir}/${srcFile.substring(srcDir.length + 1)}`;
-		destFile = `${destFile.slice(0, destFile.length - path.extname(destFile).length)}.js`;
+	await pMap(filesToCompile, async ([srcFile, destFile]) => {
 		const result = await babel.transformFileAsync(srcFile, options);
+
+		if (!result) {
+			ignoredFilesToCopy.push([srcFile, destFile]);
+			return;
+		}
+
+		destFile = `${destFile.slice(0, destFile.length - path.extname(destFile).length)}.js`;
 
 		if (sourceMaps) {
 			result.code += `\n//# sourceMappingURL=${destFile}.map`;
@@ -158,6 +164,19 @@ async function transform({
 			await write(`${destFile}.map`, JSON.stringify(result.map));
 		}
 	}, {concurrency: 5});
+
+	if (ignoredFilesToCopy.length) {
+		if (copyOthers) {
+			logger.log(`[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config. Copying them unmodified.`);
+			await pMap(ignoredFilesToCopy, async ([src, dest]) => {
+				await mkdirp(dest);
+				await fs.copyFile(src, dest);
+			});
+		}
+		else {
+			logger.log(`[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config.`);
+		}
+	}
 
 	if (verbose) {
 		logger.timeEnd('babel-changed');
