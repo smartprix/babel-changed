@@ -47,8 +47,8 @@ async function transform({
 	verbose = true,
 } = {}) {
 	// convert srcDir & destDir to absolute path
-	srcDir = path.resolve(srcDir);
-	destDir = path.resolve(destDir);
+	srcDir = path.normalize(path.resolve(srcDir));
+	destDir = path.normalize(path.resolve(destDir));
 
 	const ignorePattern = [];
 	if (destDir.startsWith(`${srcDir}/`)) {
@@ -62,15 +62,15 @@ async function transform({
 	if (verbose) {
 		logger.time('babel-changed');
 	}
-	const srcFiles = await fastGlob(filesGlobPattern, {
+	const srcFiles = (await fastGlob(filesGlobPattern, {
 		cwd: srcDir,
 		ignore: ignorePattern,
 		absolute: true,
-	});
-	const destFiles = await fastGlob(filesGlobPattern, {
+	})).map(path.normalize);
+	const destFiles = (await fastGlob(filesGlobPattern, {
 		cwd: destDir,
 		absolute: true,
-	});
+	}).map(path.normalize);
 
 	const filesToCompile = [];
 	const filesToCopy = [];
@@ -80,7 +80,7 @@ async function transform({
 	// Filter source files between files to copy or compile
 	await pMap(srcFiles, async (srcFile) => {
 		const mtimeSrc = await mtime(srcFile);
-		const destFile = `${destDir}/${srcFile.substring(srcDir.length + 1)}`;
+		const destFile = `${destDir}${path.sep}${srcFile.substring(srcDir.length + 1)}`;
 		const mtimeDest = await mtime(destFile);
 		if (mtimeDest < mtimeSrc) {
 			if (extensions.some((extension) => srcFile.endsWith(extension))) {
@@ -96,7 +96,7 @@ async function transform({
 		// ignore map files
 		if (destFile.endsWith('.map')) return;
 
-		const srcFile = `${srcDir}/${destFile.substring(destDir.length + 1)}`;
+		const srcFile = `${srcDir}${path.sep}${destFile.substring(destDir.length + 1)}`;
 		if (!srcFiles.includes(srcFile)) {
 			filesToRemove.push(destFile);
 			if (destFile.endsWith('.js')) {
