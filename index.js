@@ -1,189 +1,208 @@
-const babel = require('@babel/core');
-const path = require('path');
-const fs = require('fs').promises;
-const fastGlob = require('fast-glob');
-const pMap = require('p-map');
+const babel = require("@babel/core");
+const path = require("path");
+const fs = require("fs").promises;
+const fastGlob = require("fast-glob");
+const pMap = require("p-map");
 
 function getLogger() {
-	let logger = console;
-	try {
-		// eslint-disable-next-line global-require
-		const {Oak} = require('@smpx/oak');
-		logger = new Oak('babel-changed');
-	}
-	catch (err) {
-		logger = console;
-	}
-	return logger;
+  let logger = console;
+  try {
+    // eslint-disable-next-line global-require
+    const { Oak } = require("@smpx/oak");
+    logger = new Oak("babel-changed");
+  } catch (err) {
+    logger = console;
+  }
+  return logger;
 }
 
 async function mtime(file) {
-	try {
-		return (await fs.lstat(file)).mtime;
-	}
-	catch (e) {
-		return 0;
-	}
+  try {
+    return (await fs.lstat(file)).mtime;
+  } catch (e) {
+    return 0;
+  }
 }
 
 async function mkdirp(file) {
-	return fs.mkdir(path.dirname(file), {recursive: true, mode: 0o755});
+  return fs.mkdir(path.dirname(file), { recursive: true, mode: 0o755 });
 }
 
 async function write(file, contents) {
-	return fs.writeFile(file, contents, {encoding: 'utf8', mode: 0o644});
+  return fs.writeFile(file, contents, { encoding: "utf8", mode: 0o644 });
 }
 
 const logger = getLogger();
 
 async function transform({
-	srcDir = 'src',
-	filesGlobPattern = '**/*.*',
-	destDir = 'dist',
-	extensions = ['.js'],
-	copyOthers = true,
-	sourceMaps = true,
-	ignoredGlobPattern = '**/node_modules/**',
-	verbose = true,
+  srcDir = "src",
+  filesGlobPattern = "**/*.*",
+  destDir = "dist",
+  extensions = [".js"],
+  copyOthers = true,
+  sourceMaps = true,
+  ignoredGlobPattern = "**/node_modules/**",
+  verbose = true,
 } = {}) {
-	// convert srcDir & destDir to absolute path
-	srcDir = path.normalize(path.resolve(srcDir));
-	destDir = path.normalize(path.resolve(destDir));
+  // convert srcDir & destDir to absolute path
+  srcDir = path.normalize(path.resolve(srcDir));
+  destDir = path.normalize(path.resolve(destDir));
 
-	const ignorePattern = [];
-	if (destDir.startsWith(`${srcDir}/`)) {
-		// destDir is inside srcDir, ignore destDir files
-		ignorePattern.push(`${destDir}/**`);
-	}
-	if (ignoredGlobPattern) {
-		ignorePattern.push(ignoredGlobPattern);
-	}
+  const ignorePattern = [];
+  if (destDir.startsWith(`${srcDir}/`)) {
+    // destDir is inside srcDir, ignore destDir files
+    ignorePattern.push(`${destDir}/**`);
+  }
+  if (ignoredGlobPattern) {
+    ignorePattern.push(ignoredGlobPattern);
+  }
 
-	if (verbose) {
-		logger.time('babel-changed');
-	}
-	const srcFiles = (await fastGlob(filesGlobPattern, {
-		cwd: srcDir,
-		ignore: ignorePattern,
-		absolute: true,
-	})).map(path.normalize);
-	const destFiles = (await fastGlob(filesGlobPattern, {
-		cwd: destDir,
-		absolute: true,
-	}).map(path.normalize);
+  if (verbose) {
+    logger.time("babel-changed");
+  }
+  const srcFiles = (
+    await fastGlob(filesGlobPattern, {
+      cwd: srcDir,
+      ignore: ignorePattern,
+      absolute: true,
+    })
+  ).map(path.normalize);
+  const destFiles = (
+    await fastGlob(filesGlobPattern, {
+      cwd: destDir,
+      absolute: true,
+    })
+  ).map(path.normalize);
 
-	const filesToCompile = [];
-	const filesToCopy = [];
-	const ignoredFilesToCopy = [];
-	const filesToRemove = [];
+  const filesToCompile = [];
+  const filesToCopy = [];
+  const ignoredFilesToCopy = [];
+  const filesToRemove = [];
 
-	// Filter source files between files to copy or compile
-	await pMap(srcFiles, async (srcFile) => {
-		const mtimeSrc = await mtime(srcFile);
-		const destFile = `${destDir}${path.sep}${srcFile.substring(srcDir.length + 1)}`;
-		const mtimeDest = await mtime(destFile);
-		if (mtimeDest < mtimeSrc) {
-			if (extensions.some((extension) => srcFile.endsWith(extension))) {
-				filesToCompile.push([srcFile, destFile]);
-			}
-			else if (copyOthers) {
-				filesToCopy.push([srcFile, destFile]);
-			}
-		}
-	});
+  // Filter source files between files to copy or compile
+  await pMap(srcFiles, async (srcFile) => {
+    const mtimeSrc = await mtime(srcFile);
+    const destFile = `${destDir}${path.sep}${srcFile.substring(
+      srcDir.length + 1
+    )}`;
+    const mtimeDest = await mtime(destFile);
+    if (mtimeDest < mtimeSrc) {
+      if (extensions.some((extension) => srcFile.endsWith(extension))) {
+        filesToCompile.push([srcFile, destFile]);
+      } else if (copyOthers) {
+        filesToCopy.push([srcFile, destFile]);
+      }
+    }
+  });
 
-	destFiles.forEach((destFile) => {
-		// ignore map files
-		if (destFile.endsWith('.map')) return;
+  destFiles.forEach((destFile) => {
+    // ignore map files
+    if (destFile.endsWith(".map")) return;
 
-		const srcFile = `${srcDir}${path.sep}${destFile.substring(destDir.length + 1)}`;
-		if (!srcFiles.includes(srcFile)) {
-			filesToRemove.push(destFile);
-			if (destFile.endsWith('.js')) {
-				filesToRemove.push(`${destFile}.map`);
-			}
-		}
-	});
+    const srcFile = `${srcDir}${path.sep}${destFile.substring(
+      destDir.length + 1
+    )}`;
+    if (!srcFiles.includes(srcFile)) {
+      filesToRemove.push(destFile);
+      if (destFile.endsWith(".js")) {
+        filesToRemove.push(`${destFile}.map`);
+      }
+    }
+  });
 
-	if (filesToCopy.length) {
-		if (verbose) {
-			logger.log(`[babel] copying ${filesToCopy.length} files`);
-		}
-		await pMap(filesToCopy, async ([src, dest]) => {
-			await mkdirp(dest);
-			await fs.copyFile(src, dest);
-		});
-	}
+  if (filesToCopy.length) {
+    if (verbose) {
+      logger.log(`[babel] copying ${filesToCopy.length} files`);
+    }
+    await pMap(filesToCopy, async ([src, dest]) => {
+      await mkdirp(dest);
+      await fs.copyFile(src, dest);
+    });
+  }
 
-	if (filesToRemove.length) {
-		if (verbose) {
-			logger.log(`[babel] removing ${filesToRemove.length} files`);
-		}
-		await pMap(filesToRemove, async (destFile) => {
-			await fs.unlink(destFile).catch((err) => {
-				logger.warn('[babel] A file could not be removed,', destFile, err.message);
-			});
-		});
-	}
+  if (filesToRemove.length) {
+    if (verbose) {
+      logger.log(`[babel] removing ${filesToRemove.length} files`);
+    }
+    await pMap(filesToRemove, async (destFile) => {
+      await fs.unlink(destFile).catch((err) => {
+        logger.warn(
+          "[babel] A file could not be removed,",
+          destFile,
+          err.message
+        );
+      });
+    });
+  }
 
-	if (!filesToCompile.length) {
-		if (verbose) {
-			logger.log('[babel] nothing to compile');
-			logger.timeEnd('babel-changed');
-		}
-		return;
-	}
+  if (!filesToCompile.length) {
+    if (verbose) {
+      logger.log("[babel] nothing to compile");
+      logger.timeEnd("babel-changed");
+    }
+    return;
+  }
 
-	if (verbose) {
-		logger.log(`[babel] compiling ${filesToCompile.length} files`);
-	}
+  if (verbose) {
+    logger.log(`[babel] compiling ${filesToCompile.length} files`);
+  }
 
-	const options = {
-		sourceMaps,
-	};
+  const options = {
+    sourceMaps,
+  };
 
-	await pMap(filesToCompile, async ([srcFile, destFile]) => {
-		const result = await babel.transformFileAsync(srcFile, options);
+  await pMap(
+    filesToCompile,
+    async ([srcFile, destFile]) => {
+      const result = await babel.transformFileAsync(srcFile, options);
 
-		if (!result) {
-			ignoredFilesToCopy.push([srcFile, destFile]);
-			return;
-		}
+      if (!result) {
+        ignoredFilesToCopy.push([srcFile, destFile]);
+        return;
+      }
 
-		destFile = `${destFile.slice(0, destFile.length - path.extname(destFile).length)}.js`;
+      destFile = `${destFile.slice(
+        0,
+        destFile.length - path.extname(destFile).length
+      )}.js`;
 
-		if (sourceMaps) {
-			result.code += `\n//# sourceMappingURL=${destFile}.map`;
-		}
+      if (sourceMaps) {
+        result.code += `\n//# sourceMappingURL=${destFile}.map`;
+      }
 
-		await mkdirp(destFile);
-		await write(destFile, result.code);
+      await mkdirp(destFile);
+      await write(destFile, result.code);
 
-		if (result.map && sourceMaps) {
-			result.map.sources = [srcFile];
-			await write(`${destFile}.map`, JSON.stringify(result.map));
-		}
-	}, {concurrency: 5});
+      if (result.map && sourceMaps) {
+        result.map.sources = [srcFile];
+        await write(`${destFile}.map`, JSON.stringify(result.map));
+      }
+    },
+    { concurrency: 5 }
+  );
 
-	if (ignoredFilesToCopy.length) {
-		if (copyOthers) {
-			logger.log(`[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config. Copying them unmodified.`);
-			await pMap(ignoredFilesToCopy, async ([src, dest]) => {
-				await mkdirp(dest);
-				await fs.copyFile(src, dest);
-			});
-		}
-		else {
-			logger.log(`[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config.`);
-		}
-	}
+  if (ignoredFilesToCopy.length) {
+    if (copyOthers) {
+      logger.log(
+        `[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config. Copying them unmodified.`
+      );
+      await pMap(ignoredFilesToCopy, async ([src, dest]) => {
+        await mkdirp(dest);
+        await fs.copyFile(src, dest);
+      });
+    } else {
+      logger.log(
+        `[babel] ${ignoredFilesToCopy.length} files expected to be compiled but are ignored by babel config.`
+      );
+    }
+  }
 
-	if (verbose) {
-		logger.timeEnd('babel-changed');
-	}
+  if (verbose) {
+    logger.timeEnd("babel-changed");
+  }
 }
 
 module.exports = {
-	transform,
-	logger,
-}
+  transform,
+  logger,
+};
