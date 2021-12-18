@@ -70,7 +70,7 @@ async function transform({
 	const destFiles = (await fastGlob(filesGlobPattern, {
 		cwd: destDir,
 		absolute: true,
-	}).map(path.normalize);
+	})).map(path.normalize);
 
 	const filesToCompile = [];
 	const filesToCopy = [];
