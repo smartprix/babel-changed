@@ -4,7 +4,8 @@
   "description": "Only compile changed files with babel",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "rm -rf ___dist && node ./bin/babel-changed.js --src . --dest ___dist && rm -rf ___dist",
+    "prepublishOnly": "npm run test"
   },
   "bin": {
     "babel-changed": "bin/babel-changed.js"

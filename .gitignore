@@ -60,5 +60,10 @@ typings/
 # next.js build output
 .next
 
+# Other temp dirs
+.lh
+.history
+___dist
+
 package-lock.json
 yarn.lock
